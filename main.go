@@ -42,6 +42,7 @@ type config struct {
 
 const metricsPath = "/metrics"
 
+// TODO compile label regexps only once
 func addLabels(vm *ocatypes.Vm, labels []label) string {
 	var labelAttrs []string
 
@@ -51,8 +52,12 @@ func addLabels(vm *ocatypes.Vm, labels []label) string {
 			labelAttrs = append(labelAttrs, fmt.Sprintf(`%s="%s"`, label.Name, err))
 			continue
 		}
+
 		if labelMatch.MatchString(vm.Name) {
-			labelAttrs = append(labelAttrs, fmt.Sprintf(`%s="%s"`, label.Name, labelMatch.FindString(vm.Name)))
+			matches := labelMatch.FindStringSubmatch(vm.Name)
+			// not checking for nil here since it matched before
+			match := matches[len(matches)-1]
+			labelAttrs = append(labelAttrs, fmt.Sprintf(`%s="%s"`, label.Name, match))
 		}
 	}
 
