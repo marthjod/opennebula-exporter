@@ -8,12 +8,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/marthjod/opennebula-exporter/labeling"
-
 	"github.com/marthjod/gocart/api"
 	"github.com/marthjod/gocart/vmpool"
 	"github.com/marthjod/opennebula-exporter/config"
 	"github.com/marthjod/opennebula-exporter/handler"
+	"github.com/marthjod/opennebula-exporter/labeling"
 	yaml "gopkg.in/yaml.v2"
 )
 
