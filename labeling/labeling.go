@@ -10,16 +10,29 @@ import (
 	"github.com/marthjod/opennebula-exporter/config"
 )
 
+type regexpLabel struct {
+	Name   string
+	Regexp *regexp.Regexp
+}
+
 func AddLabels(cfg config.Config, vmPool *vmpool.VmPool) string {
-	var lines strings.Builder
+	var (
+		lines        strings.Builder
+		regexpLabels = []*regexpLabel{}
+	)
+
+	if len(cfg.VMNameRegexpLabels) > 0 {
+		regexpLabels = compileRegexpLabels(cfg.VMNameRegexpLabels)
+	}
 
 	for _, vm := range vmPool.Vms {
 		var b strings.Builder
 		fmt.Fprintf(&b, `%s_vms{name=%q,id="%d",lcm_state=%q`,
 			cfg.Exporter.Namespace, vm.Name, vm.Id, vm.LCMState)
 
+		// even if regexpLabels is empty, check length to avoid func call
 		if len(cfg.VMNameRegexpLabels) > 0 {
-			b.WriteString(AddVMNameRegexpLabels(vm, cfg.VMNameRegexpLabels))
+			b.WriteString(AddVMNameRegexpLabels(vm, regexpLabels))
 		}
 
 		if len(cfg.UserTemplateLabels) > 0 {
@@ -48,19 +61,12 @@ func AddUserTemplateLabels(vm *ocatypes.Vm, labels []config.UserTemplateLabel) s
 
 }
 
-// TODO compile label regexps only once
-func AddVMNameRegexpLabels(vm *ocatypes.Vm, labels []config.VMNameRegexpLabel) string {
+func AddVMNameRegexpLabels(vm *ocatypes.Vm, labels []*regexpLabel) string {
 	var labelAttrs []string
 
 	for _, label := range labels {
-		labelMatch, err := regexp.Compile(label.Regexp)
-		if err != nil {
-			labelAttrs = append(labelAttrs, fmt.Sprintf(`%s=%q`, label.Name, err))
-			continue
-		}
-
-		if labelMatch.MatchString(vm.Name) {
-			matches := labelMatch.FindStringSubmatch(vm.Name)
+		if label.Regexp.MatchString(vm.Name) {
+			matches := label.Regexp.FindStringSubmatch(vm.Name)
 			// not checking for nil here since it matched before
 			match := matches[len(matches)-1]
 			labelAttrs = append(labelAttrs, fmt.Sprintf(`%s=%q`, label.Name, match))
@@ -68,6 +74,25 @@ func AddVMNameRegexpLabels(vm *ocatypes.Vm, labels []config.VMNameRegexpLabel) s
 	}
 
 	return buildString(labelAttrs)
+}
+
+func compileRegexpLabels(expressions []config.VMNameRegexpLabel) []*regexpLabel {
+	var regexpLabels = []*regexpLabel{}
+
+	for _, label := range expressions {
+		re, err := regexp.Compile(label.Regexp)
+		if err != nil {
+			fmt.Printf("# error compiling regexp for name %q\n", label.Name)
+			continue
+		}
+
+		regexpLabels = append(regexpLabels, &regexpLabel{
+			Name:   label.Name,
+			Regexp: re,
+		})
+	}
+
+	return regexpLabels
 }
 
 func buildString(a []string) string {
