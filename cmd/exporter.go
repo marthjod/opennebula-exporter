@@ -2,11 +2,11 @@ package main
 
 import (
 	"crypto/tls"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/marthjod/opennebula-exporter/labeling"
 
@@ -17,16 +17,15 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+const configFileEnvVar = "OPENNEBULA_EXPORTER_CONFIG"
+
 func main() {
+	configFile := os.Getenv(configFileEnvVar)
+	if configFile == "" {
+		log.Fatalf("env var %q not set", configFileEnvVar)
+	}
 
-	// TODO config from env
-	var (
-		configFile = flag.String("config", "opennebula-exporter.yaml", "Config file")
-	)
-
-	flag.Parse()
-
-	c, err := ioutil.ReadFile(*configFile)
+	c, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		log.Fatalln(err)
 	}
