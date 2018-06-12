@@ -1,14 +1,17 @@
 ---
 exporter:
-    namespace: opennebula
-    listen_address: :9999
+  namespace: opennebula
+  listen_address: :9999
 api:
-    endpoint: http://one-sandbox:2633/RPC2
-    user: oneadmin
-    password: opennebula
-    insecure_ssl: false
-labels:
-    - name: region
-      match: "(ea|we)st$"
-    - name: type
-      match: "^(db|web|app)"
+  endpoint: http://one-sandbox:2633/RPC2
+  user: oneadmin
+  password: opennebula
+  insecure_ssl: false
+labels_vm_name:
+  - name: region
+    regexp: "(ea|we)st$"
+  - name: type
+    regexp: "^.{3}(db|web|app)"
+labels_user_template:
+  - name: custom
+    field: CUSTOM_FIELD

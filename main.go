@@ -29,27 +29,48 @@ type apiConfig struct {
 	InsecureSSL bool   `yaml:"insecure_ssl"`
 }
 
-type label struct {
-	Name  string `yaml:"name"`
-	Match string `yaml:"match"`
+type vmNameRegexpLabel struct {
+	Name   string `yaml:"name"`
+	Regexp string `yaml:"regexp"`
+}
+
+type userTemplateLabel struct {
+	Name          string `yaml:"name"`
+	TemplateField string `yaml:"field"`
 }
 
 type config struct {
-	Exporter exporterConfig `yaml:"exporter"`
-	API      apiConfig      `yaml:"api"`
-	Labels   []label        `yaml:"labels"`
+	Exporter           exporterConfig      `yaml:"exporter"`
+	API                apiConfig           `yaml:"api"`
+	VMNameRegexpLabels []vmNameRegexpLabel `yaml:"labels_vm_name"`
+	UserTemplateLabels []userTemplateLabel `yaml:"labels_user_template"`
 }
 
 const metricsPath = "/metrics"
 
-// TODO compile label regexps only once
-func addLabels(vm *ocatypes.Vm, labels []label) string {
+func addUserTemplateLabels(vm *ocatypes.Vm, labels []userTemplateLabel) string {
 	var labelAttrs []string
 
 	for _, label := range labels {
-		labelMatch, err := regexp.Compile(label.Match)
+		field, err := vm.UserTemplate.Items.GetCustom(label.TemplateField)
 		if err != nil {
-			labelAttrs = append(labelAttrs, fmt.Sprintf(`%s="%s"`, label.Name, err))
+			field = "unknown"
+		}
+		labelAttrs = append(labelAttrs, fmt.Sprintf(`%s=%q`, label.Name, field))
+	}
+
+	return buildString(labelAttrs)
+
+}
+
+// TODO compile label regexps only once
+func addVMNameRegexpLabels(vm *ocatypes.Vm, labels []vmNameRegexpLabel) string {
+	var labelAttrs []string
+
+	for _, label := range labels {
+		labelMatch, err := regexp.Compile(label.Regexp)
+		if err != nil {
+			labelAttrs = append(labelAttrs, fmt.Sprintf(`%s=%q`, label.Name, err))
 			continue
 		}
 
@@ -57,18 +78,11 @@ func addLabels(vm *ocatypes.Vm, labels []label) string {
 			matches := labelMatch.FindStringSubmatch(vm.Name)
 			// not checking for nil here since it matched before
 			match := matches[len(matches)-1]
-			labelAttrs = append(labelAttrs, fmt.Sprintf(`%s="%s"`, label.Name, match))
+			labelAttrs = append(labelAttrs, fmt.Sprintf(`%s=%q`, label.Name, match))
 		}
 	}
 
-	if len(labelAttrs) > 0 {
-		var b strings.Builder
-		b.WriteString(",")
-		b.WriteString(strings.Join(labelAttrs, ","))
-		return b.String()
-	}
-
-	return ""
+	return buildString(labelAttrs)
 }
 
 func main() {
@@ -106,7 +120,7 @@ func main() {
 
 	http.HandleFunc(metricsPath, func(w http.ResponseWriter, r *http.Request) {
 
-		// TODO query asynchronously
+		// TODO query asynchronously if faster (!)
 		vmPool := vmpool.NewVmPool()
 		if err := apiClient.Call(vmPool); err != nil {
 			log.Fatalln(err)
@@ -115,11 +129,15 @@ func main() {
 		for _, vm := range vmPool.Vms {
 			var b strings.Builder
 
-			fmt.Fprintf(&b, `%s_vms{name="%s",lcm_state="%s",api_host="%s"`,
-				cfg.Exporter.Namespace, vm.Name, vm.LCMState, apiHost)
+			fmt.Fprintf(&b, `%s_vms{name=%q,id="%d",lcm_state=%q,api_host=%q`,
+				cfg.Exporter.Namespace, vm.Name, vm.Id, vm.LCMState, apiHost)
 
-			if len(cfg.Labels) > 0 {
-				b.WriteString(addLabels(vm, cfg.Labels))
+			if len(cfg.VMNameRegexpLabels) > 0 {
+				b.WriteString(addVMNameRegexpLabels(vm, cfg.VMNameRegexpLabels))
+			}
+
+			if len(cfg.UserTemplateLabels) > 0 {
+				b.WriteString(addUserTemplateLabels(vm, cfg.UserTemplateLabels))
 			}
 
 			b.WriteString("} 1\n")
@@ -143,4 +161,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+}
+
+func buildString(a []string) string {
+	if len(a) > 0 {
+		var b strings.Builder
+		b.WriteString(",")
+		b.WriteString(strings.Join(a, ","))
+		return b.String()
+	}
+
+	return ""
 }
