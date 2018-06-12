@@ -2,7 +2,6 @@ package labeling
 
 import (
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
 
@@ -14,18 +13,10 @@ import (
 func AddLabels(cfg config.Config, vmPool *vmpool.VmPool) string {
 	var lines strings.Builder
 
-	var apiHost string
-	apiURL, err := url.Parse(cfg.API.Endpoint)
-	if err != nil {
-		apiHost = cfg.API.Endpoint
-	} else {
-		apiHost = apiURL.Hostname()
-	}
-
 	for _, vm := range vmPool.Vms {
 		var b strings.Builder
-		fmt.Fprintf(&b, `%s_vms{name=%q,id="%d",lcm_state=%q,api_host=%q`,
-			cfg.Exporter.Namespace, vm.Name, vm.Id, vm.LCMState, apiHost)
+		fmt.Fprintf(&b, `%s_vms{name=%q,id="%d",lcm_state=%q`,
+			cfg.Exporter.Namespace, vm.Name, vm.Id, vm.LCMState)
 
 		if len(cfg.VMNameRegexpLabels) > 0 {
 			b.WriteString(AddVMNameRegexpLabels(vm, cfg.VMNameRegexpLabels))
