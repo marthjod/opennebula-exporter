@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/marthjod/gocart/api"
 	"github.com/marthjod/gocart/vmpool"
@@ -39,13 +40,13 @@ func main() {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: cfg.API.InsecureSSL},
 	}
 
-	apiClient, err := api.NewClient(cfg.API.Endpoint, cfg.API.User, cfg.API.Password, tr)
+	apiClient, err := api.NewClient(cfg.API.Endpoint, cfg.API.User, cfg.API.Password, tr, 30*time.Second)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// TODO query asynchronously if faster (!)
-	vmPool := vmpool.NewVmPool()
+	vmPool := vmpool.NewVMPool()
 	if err := apiClient.Call(vmPool); err != nil {
 		log.Fatalln(err)
 	}

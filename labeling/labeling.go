@@ -15,7 +15,7 @@ type regexpLabel struct {
 	Regexp *regexp.Regexp
 }
 
-func AddLabels(cfg config.Config, vmPool *vmpool.VmPool) string {
+func AddLabels(cfg config.Config, vmPool *vmpool.VMPool) string {
 	var (
 		lines        strings.Builder
 		regexpLabels = []*regexpLabel{}
@@ -25,10 +25,10 @@ func AddLabels(cfg config.Config, vmPool *vmpool.VmPool) string {
 		regexpLabels = compileRegexpLabels(cfg.VMNameRegexpLabels)
 	}
 
-	for _, vm := range vmPool.Vms {
+	for _, vm := range vmPool.VMs {
 		var b strings.Builder
-		fmt.Fprintf(&b, `%s_vms{name=%q,id="%d",lcm_state=%q`,
-			cfg.Exporter.Namespace, vm.Name, vm.Id, vm.LCMState)
+		fmt.Fprintf(&b, `%s_vms{name=%q,id="%d",state=%q,lcm_state=%q,host=%q`,
+			cfg.Exporter.Namespace, vm.Name, vm.ID, vm.State, vm.LCMState, vm.Node)
 
 		// even if regexpLabels is empty, check length to avoid func call
 		if len(cfg.VMNameRegexpLabels) > 0 {
@@ -46,7 +46,7 @@ func AddLabels(cfg config.Config, vmPool *vmpool.VmPool) string {
 	return lines.String()
 }
 
-func AddUserTemplateLabels(vm *ocatypes.Vm, labels []config.UserTemplateLabel) string {
+func AddUserTemplateLabels(vm *ocatypes.VM, labels []config.UserTemplateLabel) string {
 	var labelAttrs []string
 
 	for _, label := range labels {
@@ -61,7 +61,7 @@ func AddUserTemplateLabels(vm *ocatypes.Vm, labels []config.UserTemplateLabel) s
 
 }
 
-func AddVMNameRegexpLabels(vm *ocatypes.Vm, labels []*regexpLabel) string {
+func AddVMNameRegexpLabels(vm *ocatypes.VM, labels []*regexpLabel) string {
 	var labelAttrs []string
 
 	for _, label := range labels {

@@ -16,10 +16,10 @@ type Handler interface {
 
 type handler struct {
 	cfg    config.Config
-	vmPool *vmpool.VmPool
+	vmPool *vmpool.VMPool
 }
 
-func NewHandler(cfg config.Config, vmPool *vmpool.VmPool) Handler {
+func NewHandler(cfg config.Config, vmPool *vmpool.VMPool) Handler {
 	return &handler{
 		cfg:    cfg,
 		vmPool: vmPool,
