@@ -96,12 +96,11 @@ func compileRegexpLabels(expressions []config.VMNameRegexpLabel) []*regexpLabel 
 }
 
 func buildString(a []string) string {
-	if len(a) > 0 {
-		var b strings.Builder
-		b.WriteString(",")
-		b.WriteString(strings.Join(a, ","))
-		return b.String()
+	if len(a) == 0 {
+		return ""
 	}
-
-	return ""
+	var b strings.Builder
+	b.WriteString(",")
+	b.WriteString(strings.Join(a, ","))
+	return b.String()
 }
