@@ -1,20 +1,16 @@
 ---
 exporter:
   namespace: opennebula
-  listen_address: :9999
-  metrics_path: /metrics
-  # NB: if write_stdout is true, listen_address will be ignored
-  # write_stdout: true
 api:
   endpoint: http://one-sandbox:2633/RPC2
   user: oneadmin
   password: opennebula
-  insecure_ssl: false
+  # insecure_ssl: false
 labels_vm_name:
   - name: region
-    regexp: "(ea|we)st$"
+    regexp: "(east|west)$"
   - name: type
-    regexp: "^.{3}(db|web|app)"
+    regexp: "^(db|web|app).{3}"
 labels_user_template:
   - name: custom
     field: CUSTOM_FIELD

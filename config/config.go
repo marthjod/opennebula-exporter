@@ -1,10 +1,7 @@
 package config
 
 type exporterConfig struct {
-	Namespace     string `yaml:"namespace"`
-	ListenAddress string `yaml:"listen_address"`
-	MetricsPath   string `yaml:"metrics_path"`
-	WriteStdout   bool   `yaml:"write_stdout"`
+	Namespace string `yaml:"namespace"`
 }
 
 type apiConfig struct {
