@@ -15,6 +15,7 @@ type regexpLabel struct {
 	Regexp *regexp.Regexp
 }
 
+// AddLabels returns a complete label string for each VM in the VM pool.
 func AddLabels(cfg config.Config, vmPool *vmpool.VMPool) string {
 	var (
 		lines        strings.Builder
@@ -46,6 +47,7 @@ func AddLabels(cfg config.Config, vmPool *vmpool.VMPool) string {
 	return lines.String()
 }
 
+// AddUserTemplateLabels returns a string of VM user template-oriented labels for a single VM.
 func AddUserTemplateLabels(vm *ocatypes.VM, labels []config.UserTemplateLabel) string {
 	var labelAttrs []string
 
@@ -61,6 +63,7 @@ func AddUserTemplateLabels(vm *ocatypes.VM, labels []config.UserTemplateLabel) s
 
 }
 
+// AddVMNameRegexpLabels returns a string of VM name-oriented regexp labels for a single VM.
 func AddVMNameRegexpLabels(vm *ocatypes.VM, labels []*regexpLabel) string {
 	var labelAttrs []string
 
